@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';import vm from 'node:vm';import ts from 'typescript';import {readFileSync} from 'node:fs';
+let user=null,attempts=0;
+const db={prepare(){return {bind(){return this},async run(){},async first(){return {attempts}}}}};
+const src=readFileSync('lib/project-store.ts','utf8').replace(/^import .*;$/gm,'').replace("const {currentUser}=await import('./email-auth');",'');
+const c={exports:{},env:{DB:db},Response,URL,Date,currentUser:async()=>user};vm.runInNewContext(ts.transpileModule(src,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,c);
+const req=(headers={})=>new Request('https://test/api/projects',{method:'POST',headers:{origin:'https://test','content-type':'application/json',...headers}});
+assert.equal((await c.exports.authorize(req({origin:'https://evil.test'}))).status,403);
+assert.equal((await c.exports.authorize(req({'sec-fetch-site':'cross-site'}))).status,403);
+assert.equal((await c.exports.authorize(req())).status,401);
+user={id:'approved'};
+assert.equal((await c.exports.authorize(req({'content-type':'text/plain'}))).status,415);
+attempts=61;assert.equal((await c.exports.authorize(req())).status,429);
+attempts=1;const allowed=req();assert.equal(await c.exports.authorize(allowed),null);assert.equal(c.exports.actor(allowed),'approved');
+console.log('PASS: cross-origin rejection, login requirement, content-type restriction, rate limit, approved actor');

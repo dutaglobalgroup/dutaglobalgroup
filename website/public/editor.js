@@ -1,0 +1,35 @@
+let editingId=null,editingRevision=0,currentPhoto='',signedIn=false;
+let projectLoadPending=false,projectMutationEpoch=0;
+async function loadProjects(options={}){
+ loadImportedRecords();loadProgressRecords();
+ const quiet=options.quiet===true;if(projectLoadPending)return;
+ projectLoadPending=true;const epoch=projectMutationEpoch;const refresh=$('refresh-data');refresh.disabled=true;
+ if(!quiet)$('data-status').textContent='Memuat data terbaru…';
+ try{
+  const response=await fetch('/api/projects',{cache:'no-store',signal:AbortSignal.timeout(12000)});const data=await response.json();
+  if(!response.ok)throw new Error(data.error||'Data belum dapat dimuat.');
+  if(epoch!==projectMutationEpoch||$('save-project').disabled||$('confirm-delete').disabled)return;
+  const changed=JSON.stringify(projects)!==JSON.stringify(data.projects);projects=data.projects;if(typeof updateGeneral==='function')updateGeneral();
+  if((changed||!quiet)&&activeMonitoring==='construction'){render();if(!quiet)fit()}
+
+ }catch(e){$('data-status').textContent='Sinkronisasi tertunda. Data terakhir tetap ditampilkan; mencoba lagi otomatis.'}
+ finally{projectLoadPending=false;refresh.disabled=false}
+}
+const projectChannel=typeof BroadcastChannel!=='undefined'?new BroadcastChannel('project-updates'):null;
+if(projectChannel)projectChannel.onmessage=()=>loadProjects({quiet:true});
+setInterval(()=>{if(!document.hidden)loadProjects({quiet:true})},5000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)loadProjects({quiet:true})});
+window.addEventListener('focus',()=>loadProjects({quiet:true}));
+window.addEventListener('online',()=>loadProjects({quiet:true}));
+async function session(){try{const r=await fetch('/api/session',{cache:'no-store'});const data=await r.json();signedIn=data.signedIn;window.currentAccount=data;window.dispatchEvent(new Event('account-updated'));$('admin-link').hidden=!data.isAdmin;$('auth-link').textContent=signedIn?'Keluar · '+data.email:'Masuk';$('auth-link').href='#';}catch{signedIn=false}}
+function openEditor(id){if(!signedIn){openAuth(()=>openEditor(id));return}const p=projects.find(p=>p.id===id);editingId=p?.id||crypto.randomUUID();editingRevision=p?.revision||0;currentPhoto=p?.photo||'';const form=$('project-form');form.reset();$('edit-region').innerHTML=indonesiaRegionOptions(p?.region||'Aceh Barat');const values=p?{...p,category:p.category||(p.plannerReport?'planners':'consultants')}:{name:'',region:'Aceh Barat',district:'',sector:'Jaringan Irigasi',year:new Date().getFullYear(),budget:0,status:'Berjalan',actual:0,plan:null,lat:null,lng:null,contractor:'',end:'',description:''};for(const key of Object.keys(values)){const field=form.elements.namedItem(key);if(field&&key!=='photoFile')field.value=values[key]??''}mountProjectDistrict(form,p||{});fillReportEditor(p);mountPointEditor(form,p||{});$('editor-title').textContent=p?'EDIT PROYEK':'TAMBAH PROYEK';$('form-error').textContent='';$('editor').showModal()}
+$('add-project').onclick=()=>openProjectCategory();$('close-editor').onclick=$('cancel-editor').onclick=()=>{if(!$('save-project').disabled)$('editor').close()};$('editor').addEventListener('cancel',e=>{if($('save-project').disabled)e.preventDefault()});
+$('project-form').onsubmit=async e=>{e.preventDefault();const form=e.currentTarget;if(!form.reportValidity())return;const button=$('save-project');projectMutationEpoch++;button.disabled=true;button.textContent='Menyimpan…';$('form-error').textContent='';try{const fd=new FormData(form),file=fd.get('photoFile');if(file&&file.size){if(file.size>5*1024*1024)throw new Error('Foto maksimal 5 MB.');const body=new FormData();body.set('photo',file);const upload=await fetch('/api/photos',{method:'POST',body});const result=await upload.json();if(!upload.ok)throw new Error(result.error||'Foto gagal diunggah.');currentPhoto=result.url}const payload={id:editingId,revision:editingRevision,photo:currentPhoto,manualStatus:projects.find(p=>p.id===editingId)?.manualStatus||'auto'};for(const key of ['category','supervisionName','village','name','region','district','sector','contractor','description','status','end','teamLeader','consultantAdmin','experts','expertise','plannerReport'])payload[key]=String(fd.get(key)||'').trim();for(const key of ['year','budget','actual','lat','lng'])payload[key]=['lat','lng'].includes(key)&&fd.get(key)===''?null:Number(fd.get(key));Object.assign(payload,await readPointPayload(form));payload.consultantProducts=readReportEditor();payload.consultantReport=projects.find(p=>p.id===editingId)?.consultantReport||'';payload.plan=fd.get('plan')===''?null:Number(fd.get('plan'));const response=await fetch('/api/projects',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const data=await response.json();if(!response.ok)throw new Error(data.error||'Perubahan gagal disimpan.');const old=projects.findIndex(p=>p.id===data.project.id);if(old<0)projects.push(data.project);else projects[old]=data.project;projectMutationEpoch++;projectChannel?.postMessage('saved');render();$('data-status').textContent=`${projects.length} proyek · Diperbarui ${new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}`;$('editor').close();$('toast').textContent='Perubahan berhasil disimpan online';$('toast').style.display='block';setTimeout(()=>$('toast').style.display='none',3500)}catch(error){$('form-error').textContent=error.message}finally{button.disabled=false;button.textContent='Simpan perubahan'}};
+window.dashboardReady=true;loadProjects();session();
+
+$('refresh-data').onclick=loadProjects;
+let deletingProject=null;
+function openDelete(id){if(!signedIn){openAuth(()=>openDelete(id));return}deletingProject=projects.find(p=>p.id===id);if(!deletingProject)return;$('delete-name').textContent=deletingProject.name;$('delete-error').textContent='';$('delete-dialog').showModal()}
+$('close-delete').onclick=$('cancel-delete').onclick=()=>{if(!$('confirm-delete').disabled)$('delete-dialog').close()};
+$('delete-dialog').addEventListener('cancel',e=>{if($('confirm-delete').disabled)e.preventDefault()});
+$('confirm-delete').onclick=async()=>{if(!deletingProject)return;const button=$('confirm-delete');projectMutationEpoch++;button.disabled=true;button.textContent='Menghapus…';$('delete-error').textContent='';try{const r=await fetch('/api/projects',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:deletingProject.id,revision:deletingProject.revision})});const data=await r.json();if(!r.ok)throw new Error(data.error||'Proyek belum dihapus.');projects=projects.filter(p=>p.id!==data.id);projectMutationEpoch++;projectChannel?.postMessage('deleted');render();$('delete-dialog').close();$('data-status').textContent=`${projects.length} proyek tersimpan online`;$('toast').textContent='Proyek berhasil dihapus dari daftar';$('toast').style.display='block';setTimeout(()=>$('toast').style.display='none',3500)}catch(e){$('delete-error').textContent=e.message}finally{button.disabled=false;button.textContent='Hapus proyek'}};

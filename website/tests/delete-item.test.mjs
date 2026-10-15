@@ -1,0 +1,13 @@
+import {readLimitedText,bodyErrorResponse} from './request-body.test.mjs';
+import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';import ts from 'typescript';import {z} from 'zod';
+let record={id:'p',description:'Keep',photo:'',consultantProducts:[{product:'A'},{product:'B'}]},revision=2;
+const db={prepare(sql){let args;return {bind(...a){args=a;return this},async first(){return {data:JSON.stringify(record),revision}},async run(){record=JSON.parse(args[0]);revision++;return {meta:{changes:1}}}}}};
+const src=fs.readFileSync('app/api/project-details/route.ts','utf8').replace(/^import .*;$/gm,'');const c={JSON,readLimitedText,bodyErrorResponse,exports:{},z,database:()=>db,authorize:async()=>null,actor:()=> 'test',json:(x,status=200)=>Response.json(x,{status}),Response};vm.runInNewContext(ts.transpileModule(src,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,c);
+const req=p=>new Request('https://test/api/project-details',{method:'PATCH',body:JSON.stringify(p)});const base={kind:'monitoring',id:'p',revision:2,removeProductIndex:0};
+assert.equal((await c.exports.PATCH(req(base))).status,200);assert.equal(record.consultantProducts.length,1);assert.equal(record.consultantProducts[0].product,'B');assert.equal(record.description,'Keep');assert.equal((await c.exports.PATCH(req(base))).status,409);assert.equal((await c.exports.PATCH(req({...base,revision:3,removeProductIndex:99}))).status,404);assert.equal((await c.exports.PATCH(req({...base,revision:3,removeProductIndex:-1}))).status,400);
+const storage=new Map(),local={SNAPSHOT_DATA:{'/api/projects':{projects:[]},'/api/progress':{records:[]},'/api/monitoring':{records:[]}},localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)},window:{},addEventListener:()=>{},Response,structuredClone,Date,JSON};vm.runInNewContext(fs.readFileSync('standalone/local-store.js','utf8'),local);
+const post=(url,p,method='POST')=>local.window.fetch(url,{method,body:JSON.stringify(p)});
+let res=await post('/api/monitoring',{id:'new',revision:0,category:'consultants',consultantProducts:[{product:'one'},{product:'two'}]});assert.equal(res.status,200);
+res=await post('/api/project-details',{kind:'monitoring',id:'new',revision:1,removeProductIndex:0},'PATCH');assert.equal(res.status,200);assert.equal((await res.json()).record.consultantProducts.length,1);
+res=await post('/api/project-details',{kind:'monitoring',id:'new',revision:2},'DELETE');assert.equal(res.status,200);assert.equal((await (await local.window.fetch('/api/monitoring')).json()).records.length,0);
+console.log('PASS: item-only deletion, preserved fields, revision/validation guards, local create/delete persistence');

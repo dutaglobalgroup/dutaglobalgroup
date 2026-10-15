@@ -1,0 +1,637 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sistem Monitoring Proyek Duta Global Group</title>
+<meta name="description" content="Dashboard WebGIS untuk memantau lokasi, progres, dan status proyek di Aceh.">
+<link rel="icon" href="logo-dgg.jpeg">
+<link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="security.css">
+<link rel="stylesheet" href="/professional-theme.css">
+<link rel="stylesheet" href="/midnight-theme.css"><link rel="stylesheet" href="/glass-theme.css"></head>
+<body>
+<aside class="sidebar">
+<a class="brand" href="#">
+<img src="logo-dgg.jpeg" alt="" width="38" height="38">
+<span>Monitoring<small>PEMBANGUNAN PROYEK</small>
+</span>
+</a>
+<div class="workspace">RUANG KERJA <span>2026</span>
+</div>
+<nav>
+<button type="button" class="summary-toggle active" aria-expanded="false" aria-controls="summary-subnav">▦ <span>Dashboard</span>
+<span class="summary-chevron">⌄</span>
+</button>
+<div class="monitor-subnav" id="summary-subnav" hidden>
+<a href="#monitor-construction" data-monitor="construction">
+<span>Monitoring progres pelaksanaan konstruksi</span>
+</a>
+<a href="#monitor-consultants" data-monitor="consultants">
+<span>Monitoring progres konsultan supervisi</span>
+</a>
+<a href="#monitor-planners" data-monitor="planners">
+<span>Monitoring progres konsultan perencana</span>
+</a>
+</div>
+<a href="#map-section">◎ <span>Peta proyek</span>
+</a>
+<a id="admin-link" href="/admin" hidden>⚙ <span>Pengguna &amp; aktivitas</span>
+</a>
+</nav>
+<div class="side-bottom">
+<div class="region">ACEH<span>23 kabupaten / kota</span>
+</div>
+<p>Informasi proyek dalam satu peta.</p>
+<div class="profile">
+<span>DG</span>
+<div>Ruang monitoring<small>Duta Global Group</small>
+</div>
+</div>
+</div>
+</aside>
+<main id="overview">
+<header>
+<div class="breadcrumb">Ruang kerja <span>/</span> Dashboard</div>
+<div class="header-right">
+<span class="demo-dot">
+</span> Data proyek online <span class="avatar">A</span>
+</div>
+</header>
+<section class="page-heading">
+<div>
+<div class="eyebrow">DASHBOARD WEBGIS</div>
+<h1>Sistem Monitoring Proyek Duta Global Group</h1>
+<p id="workspace-description">Ringkasan pelaksanaan, laporan konsultan, dan sebaran seluruh proyek.</p>
+<p>Pantau lokasi, progres, dan pelaksanaan proyek di Aceh.</p>
+</div>
+<button id="add-project" class="button">+ Tambah Proyek</button>
+<button id="export" class="button">
+<span>↓</span> Ekspor Excel</button>
+<button id="export-pdf" class="button">Ekspor PDF</button>
+</section>
+<div class="notice">
+<span>ⓘ</span>
+<div>
+<strong>Kelola pelaksanaan proyek</strong> · Masuk untuk menambah atau mengubah proyek. Perubahan tersimpan untuk semua pengunjung.</div>
+<a class="snapshot" id="auth-link" href="#">Masuk dengan email</a>
+</div>
+<div class="data-toolbar">
+<div id="data-status" role="status">Memuat data proyek…</div>
+<button class="subtle" id="refresh-data">Perbarui data</button>
+</div>
+<button type="button" class="summary-toggle mobile-summary" aria-expanded="false" aria-controls="mobile-subnav">Dashboard <span class="summary-chevron">⌄</span>
+</button>
+<div id="mobile-subnav" hidden>
+<div class="monitor-tabs" role="tablist" aria-label="Bagian ringkasan">
+<button id="tab-construction" role="tab" aria-selected="true" aria-controls="monitor-construction" data-monitor="construction">Monitoring progres pelaksanaan konstruksi</button>
+<button id="tab-consultants" role="tab" aria-selected="false" aria-controls="monitor-consultants" tabindex="-1" data-monitor="consultants">Monitoring progres konsultan supervisi</button>
+<button id="tab-planners" role="tab" aria-selected="false" aria-controls="monitor-planners" tabindex="-1" data-monitor="planners">Monitoring progres konsultan perencana</button>
+</div>
+</div>
+<div id="monitor-construction" role="tabpanel" aria-labelledby="tab-construction">
+<h2 class="monitor-title">Monitoring progres pelaksanaan konstruksi</h2>
+<div id="filters-construction">
+<section class="filters" id="section-filters" aria-label="Filter proyek">
+<label class="search">
+<span>⌕</span>
+<input id="search" type="search" placeholder="Cari nama atau kode proyek…" aria-label="Cari proyek">
+</label>
+<select id="region" aria-label="Kabupaten atau kota">
+<option value="">Semua kabupaten / kota</option>
+</select>
+<select id="sector" aria-label="Jenis pekerjaan">
+<option value="">Semua jenis pekerjaan</option>
+<option>Jalan & jembatan</option>
+<option>Gedung</option>
+<option>Sumber daya air</option>
+<option>Permukiman</option>
+</select>
+<select id="year" aria-label="Tahun anggaran">
+<option value="">Semua tahun</option>
+</select>
+<select id="status" aria-label="Status proyek">
+<option value="">Semua status</option>
+<option>Berjalan</option>
+<option>Terlambat</option>
+<option>Selesai</option>
+</select>
+<button class="reset" id="reset">Reset</button>
+</section>
+</div>
+<section class="kpis">
+<article>
+<div>Total proyek <span>▦</span>
+</div>
+<strong id="total">—</strong>
+<small id="total-note">di seluruh wilayah Aceh</small>
+</article>
+<article>
+<div>Paket tertinggal <span>▦</span>
+</div>
+<strong id="budget">
+</strong>
+<small>Realisasi di bawah rencana</small>
+</article>
+<article>
+<div>Rata-rata progres <span>◷</span>
+</div>
+<strong id="progress">
+</strong>
+<div class="mini-track">
+<i id="avg-bar">
+</i>
+</div>
+</article>
+<article class="running">
+<div>Proyek berjalan <span>◷</span>
+</div>
+<strong id="late">
+</strong>
+<small>Status proyek terpilih</small>
+</article>
+</section>
+<section class="map-grid" id="map-section">
+<article class="panel map-panel">
+<div class="panel-heading">
+<div>
+<h2>Sebaran proyek</h2>
+<p>
+<span id="map-count">
+</span> titik proyek tersimpan</p>
+</div>
+<button class="subtle" id="fit">◎ Tampilkan semua</button>
+</div>
+<p class="map-location-note">Klik titik untuk ringkasan proyek. Gunakan Edit koordinat untuk menambah atau memindahkan lokasi.</p>
+<div class="map-wrap">
+<div id="map" aria-label="Peta lokasi proyek Aceh">
+</div>
+<div id="map-error" role="status" hidden>Peta belum dapat dimuat. Periksa koneksi internet; daftar proyek tetap tersedia.</div>
+<button id="retry-map" class="subtle" type="button" hidden>Muat ulang peta</button>
+<div class="map-label">ACEH <span>Indonesia</span>
+</div>
+<div class="legend">
+<span>
+<i class="dot green">
+</i>Berjalan</span>
+<span>
+<i class="dot orange">
+</i>Terlambat</span>
+<span>
+<i class="dot blue">
+</i>Selesai</span>
+</div>
+</div>
+</article>
+<article class="panel status-panel">
+<div class="panel-heading">
+<div>
+<h2>Status pelaksanaan</h2>
+<p>Jumlah paket per status · Sesuai filter</p>
+</div>
+</div>
+<div id="status-chart" class="status-chart">
+</div>
+<div id="status-list">
+</div>
+<div class="attention">
+<span>↗</span>
+<p>
+<strong id="attention-title">
+</strong>
+<small>Status dihitung dari realisasi dan deviasi terhadap rencana.</small>
+</p>
+</div>
+</article>
+</section>
+<section class="panel deadline-panel">
+<div class="panel-heading">
+<div>
+<h2>Jadwal pelaksanaan proyek</h2>
+<p id="deadline-date">
+</p>
+</div>
+</div>
+<div class="deadline-legend">
+<span>
+<i class="dot green">
+</i> Sisa hari</span>
+<span>
+<i class="dot orange">
+</i> Lewat target</span>
+<span>Skala panjang batang dalam hari</span>
+</div>
+<div id="deadline-chart" class="deadline-chart" aria-label="Grafik sisa hari proyek">
+</div>
+<p class="monitor-note">Durasi dihitung dari tanggal mulai hingga tanggal selesai. Hari berjalan dan sisa waktu mengikuti kalender WIB.</p>
+</section>
+<section class="analysis-grid">
+<article class="panel">
+<div class="panel-heading">
+<div>
+<h2>Progres pelaksanaan</h2>
+<p>Rata-rata proyek terpilih · Tidak dibobot nilai kontrak</p>
+</div>
+</div>
+<div id="progress-summary" class="progress-summary">
+</div>
+</article>
+<article class="panel">
+<div class="panel-heading">
+<div>
+<h2>Keterangan status</h2>
+<p>Total kontrak proyek terpilih</p>
+</div>
+</div>
+<div id="sector-summary" class="sector-summary">
+</div>
+</article>
+</section>
+<section class="panel projects-panel" id="supervision-progress-panel">
+<div class="panel-heading">
+<div>
+<h2>Progres konstruksi proyek</h2>
+<p>Progres konstruksi proyek terkini · Mengikuti pencarian dan filter subbagian</p>
+</div>
+<div class="row-actions">
+<button class="subtle" id="supervision-export-pdf">PDF progres</button>
+<button class="subtle" id="supervision-export-excel">Excel progres</button>
+</div>
+</div>
+<div class="table-wrap" id="progress-supervision-table">
+</div>
+</section>
+<section class="panel projects-panel" id="projects">
+<div class="panel-heading">
+<div>
+<h2>Progres produk pelaksana</h2>
+<p>Bobot progres (%) · Sel kosong ditampilkan 0</p>
+</div>
+</div>
+<div class="table-wrap" id="progress-products-table">
+</div>
+</section>
+<section class="panel projects-panel" id="legacy-projects" hidden>
+<div class="panel-heading">
+<div>
+<h2>Daftar proyek <span class="count" id="table-count">
+</span>
+</h2>
+<p>Progres sesuai data proyek yang diunggah</p>
+</div>
+<label class="sort-label">Urutkan <select id="sort" aria-label="Urutkan proyek">
+<option value="priority">Deviasi terendah</option>
+<option value="name">Nama proyek</option>
+<option value="progress">Progres tertinggi</option>
+<option value="budget">Nilai terbesar</option>
+</select>
+</label>
+</div>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>PROYEK / LOKASI</th>
+<th>JENIS PEKERJAAN</th>
+<th>NILAI KONTRAK</th>
+<th>PROGRES</th>
+<th>DEVIASI</th>
+<th>STATUS</th>
+<th>AKSI</th>
+</tr>
+</thead>
+<tbody id="rows">
+</tbody>
+</table>
+</div>
+<div id="empty" hidden>Tidak ada proyek yang sesuai. Coba ubah filter atau kata pencarian.</div>
+<footer>
+<span id="result-count">
+</span>
+<span>Deviasi dihitung jika progres rencana tersedia</span>
+</footer>
+</section>
+</div>
+<section id="monitor-consultants" role="tabpanel" aria-labelledby="tab-consultants" hidden>
+<h2 class="monitor-title">Monitoring progres konsultan supervisi</h2>
+<p class="sub-description">Kelola personel supervisi, status produk, batas waktu, serta penyelesaian laporan konsultan.</p>
+<div id="filters-consultants">
+</div>
+<div id="consultant-summary" class="kpis">
+</div>
+<section class="panel report-panel">
+<div class="panel-heading">
+<div>
+<h2>Laporan konsultan</h2>
+<p>Klik judul proyek untuk melihat personel konsultan dan produk laporan</p>
+</div>
+</div>
+<div id="consultant-reports" class="report-list">
+</div>
+</section>
+</section>
+<section id="monitor-planners" role="tabpanel" aria-labelledby="tab-planners" hidden>
+<h2 class="monitor-title">Monitoring progres konsultan perencana</h2>
+<p class="sub-description">Pantau kemajuan perencanaan, personel konsultan, dan kelengkapan produk laporan.</p>
+<div id="filters-planners">
+</div>
+<div id="planner-summary" class="kpis">
+</div>
+<section class="panel report-panel">
+<div class="panel-heading">
+<div>
+<h2>Laporan perencanaan</h2>
+<p>Pantau personel, produk laporan, dan kemajuan pekerjaan perencanaan.</p>
+</div>
+</div>
+<label class="import-period">Periode progres <select data-import-period="planners">
+<option value="">Terbaru per proyek</option>
+</select>
+</label>
+<div id="planner-reports" class="report-list">
+</div>
+</section>
+</section>
+<div class="page-footer">Sistem Monitoring Proyek Duta Global Group <span>E-MAIL: <a href="mailto:dutaglobalgroup2000@gmail.com">dutaglobalgroup2000@gmail.com</a>
+</span>
+</div>
+</main>
+<dialog id="detail">
+<div class="dialog-head">
+<span>DETAIL PROYEK</span>
+<button id="close" aria-label="Tutup detail">×</button>
+</div>
+<div id="detail-content">
+</div>
+</dialog>
+<dialog id="editor">
+<div class="dialog-head">
+<span id="editor-title">EDIT PROYEK</span>
+<button type="button" id="close-editor" aria-label="Tutup formulir">×</button>
+</div>
+<form id="project-form">
+<div class="editor-grid">
+<label>Kategori proyek<select name="category"><option value="consultants">Konsultan supervisi</option><option value="planners">Konsultan perencana</option></select></label><label>Nama supervisi<input name="supervisionName" maxlength="5000"></label><label>Nama desa / gampong<input name="village" maxlength="5000"></label><label class="full">Nama proyek<input name="name" required maxlength="500">
+</label>
+<label>Kabupaten / kota<select name="region" required id="edit-region">
+</select>
+</label>
+<label>Kecamatan<input name="district" maxlength="120">
+</label>
+<label>Jenis pekerjaan<input name="sector" required maxlength="120" list="sector-options">
+<datalist id="sector-options">
+<option>Jaringan Irigasi</option>
+<option>Jalan & jembatan</option>
+<option>Gedung</option>
+<option>Permukiman</option>
+</datalist>
+</label>
+<label>Tahun anggaran<input name="year" type="number" min="2000" max="2100" required>
+</label>
+<label>Nilai kontrak (rupiah)<input name="budget" type="number" min="0" max="1000000000000000" step="0.01" required>
+<small>Masukkan angka tanpa Rp atau pemisah ribuan.</small>
+</label>
+<label>Status<select name="status">
+<option>Berjalan</option>
+<option>Terlambat</option>
+<option>Selesai</option>
+</select>
+</label>
+<label>Progres realisasi (%)<input name="actual" type="number" min="0" max="100" step="0.01" required>
+</label>
+<label>Progres rencana (%)<input name="plan" type="number" min="0" max="100" step="0.01">
+<small>Boleh kosong jika belum tersedia.</small>
+</label>
+<label>Latitude<input name="lat" type="number" min="-90" max="90" step="any">
+</label>
+<label>Longitude<input name="lng" type="number" min="-180" max="180" step="any">
+</label>
+<label class="full">Pelaksana / kontraktor<input name="contractor" maxlength="500">
+</label>
+<label>Target selesai<input name="end" type="date">
+</label>
+<label>Foto proyek<input name="photoFile" type="file" accept="image/jpeg,image/png,image/webp">
+<small>JPG, PNG, WebP · Maksimal 5 MB</small>
+</label>
+<h3 class="full form-section">Monitoring progres konsultan supervisi</h3>
+<label>Team leader<input name="teamLeader" maxlength="500">
+</label>
+<label>Admin<input name="consultantAdmin" maxlength="500">
+</label>
+<label>Personil<textarea name="experts" rows="3" maxlength="3000" placeholder="Nama personil, satu orang per baris">
+</textarea>
+</label>
+<label>Tenaga ahli<textarea name="expertise" rows="3" maxlength="3000" placeholder="Keahlian sesuai urutan personil, satu per baris">
+</textarea>
+</label>
+<section class="full consultant-edit">
+<h3>Laporan konsultan</h3>
+<div id="report-editor-rows">
+</div>
+<button type="button" id="add-report-row" class="subtle">+ Tambah produk konsultan</button>
+</section>
+<h3 class="full form-section">Monitoring progres konsultan perencana</h3>
+<label class="full">Laporan perencana<textarea name="plannerReport" rows="4" maxlength="5000" placeholder="Tanggal, jenis laporan, status, dan catatan">
+</textarea>
+</label>
+<label class="full">Deskripsi<textarea name="description" rows="3" maxlength="5000">
+</textarea>
+</label>
+</div>
+<p id="form-error" role="alert">
+</p>
+<div class="editor-actions">
+<button type="button" class="subtle" id="cancel-editor">Batal</button>
+<button class="button" id="save-project" type="submit">Simpan perubahan</button>
+</div>
+<p class="save-note">Perubahan tersimpan online dan terlihat oleh semua pengunjung.</p>
+</form>
+</dialog>
+<dialog id="delete-dialog">
+<div class="dialog-head">
+<span>HAPUS PROYEK</span>
+<button type="button" id="close-delete" aria-label="Tutup">×</button>
+</div>
+<h2>Hapus dari daftar proyek?</h2>
+<p id="delete-name">
+</p>
+<p>Proyek tidak lagi ditampilkan pada peta, ringkasan, dan hasil ekspor untuk seluruh pengunjung.</p>
+<p id="delete-error" role="alert">
+</p>
+<div class="editor-actions">
+<button id="cancel-delete" class="subtle">Batal</button>
+<button id="confirm-delete" class="danger-button">Hapus proyek</button>
+</div>
+</dialog>
+<dialog id="auth-dialog" aria-labelledby="auth-title">
+<div class="auth-layout">
+<aside class="auth-welcome">
+<div class="auth-logo">
+<img src="/logo-dgg.jpeg" width="48" height="48" alt="Duta Global Group">
+<strong>DUTA GLOBAL GROUP<small>MONITORING PROYEK</small>
+</strong>
+</div>
+<div>
+<span class="eyebrow">RUANG KERJA TERINTEGRASI</span>
+<h2>Bangun kemajuan.<br>
+<em>Kelola dengan pasti.</em>
+</h2>
+<p>Satu tempat untuk memantau konstruksi, supervisi, dan perencanaan proyek Anda.</p>
+</div>
+<small>Informasi terarah. Kolaborasi lebih mudah.</small>
+</aside>
+<div class="auth-main">
+<button id="close-auth" type="button" aria-label="Tutup">×</button>
+<span class="eyebrow">AKSES PENGELOLAAN</span>
+<h2 id="auth-title">Masuk ke dashboard</h2>
+<p class="auth-caption">Masuk untuk mengelola proyek. Hak edit diberikan setelah verifikasi email dan persetujuan admin.</p>
+<form id="auth-form">
+<label>Alamat email<input type="email" id="auth-email" required autocomplete="email" maxlength="254" placeholder="nama@email.com">
+</label>
+<label>Kata sandi<input type="password" id="auth-password" required minlength="8" maxlength="128" autocomplete="current-password" placeholder="Kata sandi Anda">
+</label>
+<p id="auth-error" role="alert">
+</p>
+<p id="auth-success" role="status">
+</p>
+<button type="submit" id="auth-submit" class="button">Masuk</button>
+<button type="button" id="auth-toggle" class="auth-toggle">Belum punya akun? Daftar</button>
+</form>
+<div class="auth-access-note"><strong>Akses pengelolaan terkontrol</strong><span>1. Verifikasi email</span><span>2. Persetujuan admin</span><span>3. Kelola proyek</span></div><div class="auth-divider">atau lanjutkan dengan</div>
+<div class="social-auth">
+<button type="button" id="login-google" class="social-button" disabled>Continue with Google</button>
+
+<p id="social-status" role="status">Memeriksa pilihan login…</p>
+</div>
+<p class="save-note">Admin persetujuan: zakikhaliq31@gmail.com. Permintaan ditinjau melalui halaman Kelola pengguna, bukan melalui kode verifikasi yang dibagikan.</p>
+</div>
+</div>
+</dialog>
+<dialog id="import-editor">
+<div class="dialog-head">
+<h2>Edit monitoring</h2>
+<button type="button" id="import-close" aria-label="Tutup">×</button>
+</div>
+<form id="import-form">
+<div id="import-fields" class="product-editor-grid">
+</div>
+<h3>Produk laporan</h3>
+<div id="import-product-rows">
+</div>
+<button type="button" id="import-add-product" class="subtle">+ Tambah produk laporan</button>
+<p id="import-error" role="alert">
+</p>
+<div class="editor-actions">
+<button type="button" id="import-cancel" class="subtle">Batal</button>
+<button type="submit" id="import-save" class="button">Simpan perubahan</button>
+</div>
+<p class="save-note">Progres dapat diubah melalui tombol Edit pada tabel.</p>
+</form>
+</dialog>
+<dialog id="progress-editor">
+<div class="dialog-head">
+<h2>Edit progres proyek</h2>
+<button type="button" id="progress-edit-close" aria-label="Tutup">×</button>
+</div>
+<form id="progress-edit-form">
+<div id="progress-edit-fields">
+</div>
+<p id="progress-edit-error" role="alert">
+</p>
+<div class="editor-actions">
+<button type="button" class="subtle" id="progress-edit-cancel">Batal</button>
+<button type="submit" class="button" id="progress-edit-save">Simpan perubahan</button>
+</div>
+</form>
+</dialog>
+<dialog id="history-editor">
+<div class="dialog-head">
+<h2>Edit progres perencanaan</h2>
+<button type="button" id="history-close" aria-label="Tutup">×</button>
+</div>
+<form id="history-form">
+<div id="history-fields" class="product-editor-grid">
+</div>
+<p id="history-error" role="alert">
+</p>
+<div class="editor-actions">
+<button type="button" class="subtle" id="history-cancel">Batal</button>
+<button type="submit" class="button" id="history-save">Simpan perubahan</button>
+</div>
+</form>
+</dialog>
+<div id="toast" role="status">
+</div>
+<dialog id="import-delete-dialog" aria-labelledby="import-delete-title">
+<div class="modal-header">
+<h2 id="import-delete-title">Hapus laporan konsultan?</h2>
+</div>
+<div class="delete-report-body">
+<p id="import-delete-name">
+</p>
+<p>Laporan ini beserta personel dan produk laporannya akan dihapus dari daftar.</p>
+<p id="import-delete-error" role="alert">
+</p>
+</div>
+<div class="modal-actions">
+<button type="button" class="subtle" id="import-delete-cancel">Batal</button>
+<button type="button" id="import-delete-confirm">Hapus laporan</button>
+</div>
+</dialog>
+<dialog id="coordinate-dialog">
+<div class="dialog-head">
+<h2>Edit koordinat proyek</h2>
+<button type="button" id="coordinate-close" aria-label="Tutup">×</button>
+</div>
+<form id="coordinate-form">
+<p id="coordinate-project">
+</p>
+<p>Gunakan koordinat desimal. Latitude −90 hingga 90, longitude −180 hingga 180.</p>
+<div class="product-editor-grid">
+<label>Latitude<input name="lat" type="number" min="-90" max="90" step="any" required>
+</label>
+<label>Longitude<input name="lng" type="number" min="-180" max="180" step="any" required>
+</label>
+</div>
+<p id="coordinate-error" role="alert">
+</p>
+<div class="editor-actions">
+<button type="button" class="subtle" id="coordinate-remove">Hapus semua titik proyek</button>
+<button class="button" id="coordinate-save">Simpan koordinat</button>
+</div>
+<p>Hapus titik tidak menghapus data proyek atau laporan.</p>
+</form>
+</dialog>
+<script src="vendor/leaflet/leaflet.js">
+</script>
+<script src="multi-points.js"></script><script src="schedule.js">
+</script>
+<script src="execution-status.js"></script><script src="app.js">
+</script>
+<script src="delete-work-item.js"></script><script src="imported-monitoring.js">
+</script>
+<script src="progress-monitoring.js">
+</script>
+<script src="monitoring.js">
+</script>
+<script src="auth.js">
+</script>
+<script src="consultant-products.js">
+</script>
+<script src="indonesia-regions.js">
+</script>
+<script src="editor.js">
+</script>
+<script src="export.js">
+</script>
+<script src="planning-history-editor.js">
+</script>
+<script src="workspace.js">
+</script>
+<script src="location-groups.js">
+</script>
+<script src="manual-status.js"></script><script src="professional-dashboard.js">
+</script>
+<script src="settings.js"></script><script src="project-category.js"></script></body>
+</html>

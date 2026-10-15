@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';import vm from 'node:vm';import {readFileSync} from 'node:fs';
+const c=vm.createContext({escapeHtml:s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;')});
+vm.runInContext(readFileSync('public/indonesia-regions.js','utf8')+readFileSync('public/multi-points.js','utf8')+readFileSync('public/location-groups.js','utf8'),c);
+assert.equal(vm.runInContext('indonesiaRegions.flatMap(p=>p.cities).length',c),514);
+assert.equal(vm.runInContext('Object.values(indonesiaDistricts).flat().length',c),7285);
+assert.equal(vm.runInContext('indonesiaRegions.flatMap(p=>p.cities).every(c=>indonesiaDistricts[c.code]?.length)',c),true);
+assert.equal(c.regionCode('Aceh Tenggara'),'11.02');assert.equal(c.regionCode('Kabupaten Aceh Tenggara'),'11.02');
+assert.match(c.indonesiaDistrictOptions('Aceh Tenggara','Lawe Alas'),/selected>Lawe Alas/);
+assert.doesNotMatch(c.indonesiaDistrictOptions('Kota Banda Aceh'),/>Lawe Alas</);
+assert.match(c.indonesiaDistrictOptions('','Kecamatan lama'),/selected>Kecamatan lama/);
+assert.doesNotMatch(c.indonesiaDistrictOptions('','"><img src=x>'),/<img/);
+let change;const region={value:'Aceh Tenggara',addEventListener:(event,cb)=>{change=cb}},district={};c.bindAdministrativeFields(region,district,'Lawe Alas');region.value='Kota Banda Aceh';change();assert.doesNotMatch(district.innerHTML,/selected/);assert.match(district.innerHTML,/Baiturrahman/);
+const groups=c.groupProjectLocations([{id:'a',kind:'monitoring',label:'Supervisi',region:'Aceh Barat',district:'Johan Pahlawan',points:[{lat:1,lng:2,region:'Aceh Tenggara',district:'Lawe Alas'},{lat:3,lng:4}]}]);
+assert.equal(groups[0].items[0].district,'Lawe Alas');assert.equal(groups[1].items[0].district,'Johan Pahlawan');
+console.log('PASS: nationwide coverage, dependent districts, preserved legacy values, escaping, per-point map locations');
