@@ -20,6 +20,11 @@ Kode website berada di folder **website/** dan dapat diedit dengan Visual Studio
 
 ## Hosting produksi
 
+Konfigurasi deployment server disiapkan pada `.github/workflows/deploy-server.yml`.
+Lihat [panduan aktivasi server](website/DEPLOY-SERVER.md) untuk sumber daya,
+konfigurasi login, migrasi data, dan pemeriksaan sebelum mengganti halaman aktif.
+Deployment belum aktif sampai konfigurasi akun hosting dipasang dan workflow dijalankan.
+
 Aplikasi menggunakan Cloudflare Workers, D1, R2, dan Supabase Auth. GitHub Pages saja tidak menjalankan API, database, penyimpanan foto, atau sesi login aplikasi ini.
 
 Untuk memindahkan sistem lengkap, diperlukan akun hosting perusahaan, binding database dan penyimpanan baru, pemindahan data dan foto produksi, konfigurasi autentikasi dan callback, serta validasi sebelum mengganti alamat publik. Jangan mengaktifkan deployment menggunakan database placeholder pada konfigurasi pengembangan.
