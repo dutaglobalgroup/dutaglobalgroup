@@ -86,3 +86,18 @@ binding hasil build sebelum deployment.
 
 Rujukan: https://developers.cloudflare.com/workers/vite-plugin/get-started/
 dan https://developers.cloudflare.com/workers/wrangler/configuration/.
+
+## Pembatasan akses dan tampilan
+
+Halaman utama sekarang memeriksa sesi di server sebelum menampilkan dashboard.
+Tanpa sesi yang disetujui, pengunjung hanya menerima halaman masuk. API proyek,
+monitoring, progres, dan foto juga memeriksa sesi secara terpisah. Foto tidak lagi
+menggunakan cache publik. Keluar mengembalikan pengguna ke halaman masuk.
+Tampilan diperbarui dengan identitas navy, formulir login responsif, tombol tampilkan
+kata sandi, status error, dan keadaan memproses.
+
+Jalankan `node tests/read-access.test.mjs` untuk memeriksa bahwa sesi kosong, pending,
+blocked, dan layanan sesi gagal tidak dapat membaca data. Perubahan ini berlaku
+setelah server diterbitkan, bukan pada salinan HTML publik GitHub Pages yang lama.
+Data yang sudah pernah diterbitkan di repository publik tidak menjadi rahasia
+hanya karena akses pada server baru diperketat.

@@ -46,6 +46,7 @@ jobs:
           node --test tests/production-config.test.mjs
           node tests/access-policy.test.mjs
           node tests/mutation-security.test.mjs
+          node tests/read-access.test.mjs
           pnpm build
           node scripts/check-production.mjs --built
       - name: Apply tracked database migrations

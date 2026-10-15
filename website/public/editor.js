@@ -7,7 +7,7 @@ async function loadProjects(options={}){
  if(!quiet)$('data-status').textContent='Memuat data terbaru…';
  try{
   const response=await fetch('/api/projects',{cache:'no-store',signal:AbortSignal.timeout(12000)});const data=await response.json();
-  if(!response.ok)throw new Error(data.error||'Data belum dapat dimuat.');
+  if(response.status===401){location.replace('/');return}if(!response.ok)throw new Error(data.error||'Data belum dapat dimuat.');
   if(epoch!==projectMutationEpoch||$('save-project').disabled||$('confirm-delete').disabled)return;
   const changed=JSON.stringify(projects)!==JSON.stringify(data.projects);projects=data.projects;if(typeof updateGeneral==='function')updateGeneral();
   if((changed||!quiet)&&activeMonitoring==='construction'){render();if(!quiet)fit()}
