@@ -10,7 +10,9 @@
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="security.css">
 <link rel="stylesheet" href="/professional-theme.css">
-<link rel="stylesheet" href="/midnight-theme.css"><link rel="stylesheet" href="/glass-theme.css"></head>
+<link rel="stylesheet" href="/midnight-theme.css"><link rel="stylesheet" href="/glass-theme.css"><link rel="stylesheet" href="point-descriptions.css">
+<link rel="stylesheet" href="/aqua-theme.css">
+<link rel="preload" href="/fonts/inter-latin-variable.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/inter-layout.css"></head>
 <body>
 <aside class="sidebar">
 <a class="brand" href="#">
@@ -114,7 +116,7 @@
 <select id="status" aria-label="Status proyek">
 <option value="">Semua status</option>
 <option>Berjalan</option>
-<option>Terlambat</option>
+<option>Belum mulai</option><option>Tanggal belum lengkap</option>
 <option>Selesai</option>
 </select>
 <button class="reset" id="reset">Reset</button>
@@ -200,7 +202,7 @@
 <p>
 <strong id="attention-title">
 </strong>
-<small>Status dihitung dari realisasi dan deviasi terhadap rencana.</small>
+<small>Status mengikuti tanggal mulai dan selesai kontrak, bukan waktu pembaruan data.</small>
 </p>
 </div>
 </article>
@@ -392,12 +394,7 @@
 <label>Nilai kontrak (rupiah)<input name="budget" type="number" min="0" max="1000000000000000" step="0.01" required>
 <small>Masukkan angka tanpa Rp atau pemisah ribuan.</small>
 </label>
-<label>Status<select name="status">
-<option>Berjalan</option>
-<option>Terlambat</option>
-<option>Selesai</option>
-</select>
-</label>
+<input type="hidden" name="status" value="Berjalan"><p class="monitor-note">Status pelaksanaan otomatis mengikuti tanggal mulai dan selesai proyek.</p>
 <label>Progres realisasi (%)<input name="actual" type="number" min="0" max="100" step="0.01" required>
 </label>
 <label>Progres rencana (%)<input name="plan" type="number" min="0" max="100" step="0.01">
@@ -409,6 +406,7 @@
 </label>
 <label class="full">Pelaksana / kontraktor<input name="contractor" maxlength="500">
 </label>
+<label>Tanggal mulai<input name="start" type="date"></label>
 <label>Target selesai<input name="end" type="date">
 </label>
 <label>Foto proyek<input name="photoFile" type="file" accept="image/jpeg,image/png,image/webp">
@@ -489,7 +487,7 @@
 <form id="auth-form">
 <label>Alamat email<input type="email" id="auth-email" required autocomplete="email" maxlength="254" placeholder="nama@email.com">
 </label>
-<label>Kata sandi<input type="password" id="auth-password" required minlength="8" maxlength="128" autocomplete="current-password" placeholder="Kata sandi Anda">
+<p id="password-policy-hint" class="monitor-note" hidden>Gunakan 16–128 karakter, termasuk huruf besar, huruf kecil, angka, dan simbol. Gunakan kata sandi unik dari pengelola kata sandi. Saat mendaftar, pemeriksaan kebocoran mengirim hanya lima karakter awal hash ke Pwned Passwords; kata sandi dan email tidak dikirim ke layanan tersebut.</p><label>Kata sandi<input type="password" id="auth-password" required minlength="8" maxlength="128" autocomplete="current-password" placeholder="Kata sandi Anda">
 </label>
 <p id="auth-error" role="alert">
 </p>
@@ -498,13 +496,7 @@
 <button type="submit" id="auth-submit" class="button">Masuk</button>
 <button type="button" id="auth-toggle" class="auth-toggle">Belum punya akun? Daftar</button>
 </form>
-<div class="auth-access-note"><strong>Akses pengelolaan terkontrol</strong><span>1. Verifikasi email</span><span>2. Persetujuan admin</span><span>3. Kelola proyek</span></div><div class="auth-divider">atau lanjutkan dengan</div>
-<div class="social-auth">
-<button type="button" id="login-google" class="social-button" disabled>Continue with Google</button>
-
-<p id="social-status" role="status">Memeriksa pilihan login…</p>
-</div>
-<p class="save-note">Admin persetujuan: zakikhaliq31@gmail.com. Permintaan ditinjau melalui halaman Kelola pengguna, bukan melalui kode verifikasi yang dibagikan.</p>
+<div class="auth-access-note"><strong>Email dan kata sandi</strong><span>Daftarkan akun menggunakan email dan kata sandi. Akun baru memerlukan persetujuan admin.</span><span>Setelah disetujui, masuk dengan email dan kata sandi untuk mengelola proyek.</span></div><p class="save-note">Admin persetujuan: zakikhaliq31@gmail.com. Permintaan ditinjau melalui halaman Kelola pengguna, bukan melalui kode verifikasi yang dibagikan.</p>
 </div>
 </div>
 </dialog>
@@ -633,5 +625,5 @@
 </script>
 <script src="manual-status.js"></script><script src="professional-dashboard.js">
 </script>
-<script src="settings.js"></script><script src="project-category.js"></script></body>
+<script src="settings.js"></script><script src="project-category.js"></script><script src="point-description-actions.js"></script><script src="/aqua-dashboard.js"></script></body>
 </html>

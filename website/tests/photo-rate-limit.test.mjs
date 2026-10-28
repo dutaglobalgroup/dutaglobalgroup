@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';import {DatabaseSync} from 'node:sqlite';import vm from 'node:vm';import ts from 'typescript';import {readFileSync} from 'node:fs';import {webcrypto} from 'node:crypto';
+const sql=new DatabaseSync(':memory:');sql.exec('CREATE TABLE auth_attempts(id TEXT PRIMARY KEY,period INTEGER,attempts INTEGER)');
+let uploads=0,denied=false;
+const db={prepare(q){let args=[];return {bind(...v){args=v;return this},async first(){return sql.prepare(q).get(...args)}}}};
+const deps={'../../../lib/request-body':{readLimitedBytes:async r=>new Uint8Array(await r.arrayBuffer()),bodyErrorResponse:()=>null},'../../../lib/project-store':{database:()=>db,actor:()=> 'approved-user',authorize:async()=>denied?new Response('',{status:401}):null,bucket:()=>({put:async()=>{uploads++}}),json:(d,status=200)=>Response.json(d,{status})}};
+const ctx={exports:{},require:n=>deps[n],Response,File,Uint8Array,TextDecoder,crypto:webcrypto,Date,console};vm.runInNewContext(ts.transpileModule(readFileSync('app/api/photos/route.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,ctx);
+const request=()=>{const form=new FormData();form.set('photo',new File([new Uint8Array([255,216,255,224,0,16])],'photo.jpg'));return new Request('https://example.test/api/photos',{method:'POST',body:form})};
+denied=true;assert.equal((await ctx.exports.POST(request())).status,401);assert.equal(uploads,0);denied=false;
+const period=Math.floor(Date.now()/3600000);sql.prepare('INSERT INTO auth_attempts VALUES(?,?,29)').run('photo-upload:approved-user',period);
+assert.equal((await ctx.exports.POST(request())).status,200);assert.equal(uploads,1);
+const limited=await ctx.exports.POST(request());assert.equal(limited.status,429);assert.ok(Number(limited.headers.get('retry-after'))>0);assert.equal(uploads,1);
+sql.prepare('UPDATE auth_attempts SET period=?').run(period-1);assert.equal((await ctx.exports.POST(request())).status,200);assert.equal(uploads,2);
+console.log('PASS: upload requires login, 30th upload allowed, 31st blocked before storage, next-hour quota resets. Storage mocked; SQL executed.');

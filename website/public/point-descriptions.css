@@ -1,0 +1,2 @@
+/* point-descriptions.css */
+.point-description-editor{grid-column:1/-1;display:grid;gap:10px;width:100%}.point-description-editor label{display:grid;gap:8px}.point-description-editor label[hidden]{display:none}.point-description-editor textarea{width:100%;min-height:110px;padding:12px;border:1px solid #cbd5e1;border-radius:10px;font:inherit;resize:vertical}.point-description-editor small{color:#64748b}.point-description-view{padding:12px 0;border-top:1px solid #e2e8f0}.point-description-view p{overflow-wrap:anywhere}

@@ -1,5 +1,5 @@
 {
-  "name": "site-creator-vinext-starter",
+  "name": "dutaglobalgroup",
   "version": "0.1.0",
   "private": true,
   "engines": {
@@ -13,7 +13,8 @@
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate",
     "db:local": "node scripts/init-local-db.mjs",
-    "test:dashboard": "node tests/dashboard.test.mjs"
+    "test:dashboard": "node tests/dashboard.test.mjs",
+    "deploy": "wrangler deploy --config dist/server/wrangler.json"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

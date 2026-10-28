@@ -1,3 +1,5 @@
+
+/* EDIT MODULE: multi-points.js */
 'use strict';
 function projectPoints(p){return Array.isArray(p.points)?p.points:(Number.isFinite(p.lat)&&Number.isFinite(p.lng)?[{label:'Titik utama',lat:p.lat,lng:p.lng}]:[])}
 function mountPointEditor(form,p){
@@ -5,8 +7,16 @@ function mountPointEditor(form,p){
  for(const name of ['lat','lng']){const input=form.elements.namedItem(name);if(input){input.disabled=true;input.closest('label').hidden=true}}
  const box=document.createElement('fieldset');box.className='point-editor';box.dataset.pointEditor='';box.innerHTML='<legend>Titik koordinat proyek</legend><p>Tambahkan satu atau beberapa lokasi. Gunakan derajat desimal: latitude −90–90 dan longitude −180–180. Kosongkan daftar jika lokasi belum tersedia.</p><div data-point-rows></div><button type="button" class="subtle" data-point-add>+ Tambah titik koordinat</button>';
  const actions=form.querySelector('.editor-actions');if(actions)actions.before(box);else form.append(box);
- const add=(p={})=>{const row=document.createElement('div');row.className='point-row';row.innerHTML=`<label>Nama titik<input data-point="label" maxlength="200" placeholder="Contoh: Lokasi pekerjaan 1" value="${escapeHtml(p.label||'')}"></label><label>Latitude<input data-point="lat" type="number" min="-90" max="90" step="any" required value="${p.lat??''}"></label><label>Longitude<input data-point="lng" type="number" min="-180" max="180" step="any" required value="${p.lng??''}"></label><button type="button" class="subtle report-delete">Hapus titik</button>`;row.querySelector('button').onclick=()=>row.remove();mountPointLocation(row,p);mountPointStatus(row,p);mountPointPhoto(row,p);box.querySelector('[data-point-rows]').append(row)};
+ const add=(p={})=>{const row=document.createElement('div');row.className='point-row';row.innerHTML=`<label>Nama titik<input data-point="label" maxlength="200" placeholder="Contoh: Lokasi pekerjaan 1" value="${escapeHtml(p.label||'')}"></label><label>Latitude<input data-point="lat" type="number" min="-90" max="90" step="any" required value="${p.lat??''}"></label><label>Longitude<input data-point="lng" type="number" min="-180" max="180" step="any" required value="${p.lng??''}"></label><button type="button" class="subtle report-delete">Hapus titik</button>`;row.querySelector('button').onclick=()=>row.remove();mountPointLocation(row,p);mountPointStatus(row,p);mountPointPhoto(row,p);mountPointDescription(row,p);box.querySelector('[data-point-rows]').append(row)};
  projectPoints(p).forEach(point=>add({...point,region:point.region??p.region??'',district:point.district??p.district??''}));box.querySelector('[data-point-add]').onclick=()=>{if(box.querySelectorAll('.point-row').length>=200){alert('Maksimal 200 titik per proyek.');return}add();box.querySelector('.point-row:last-child input').focus()};
+}
+function mountPointDescription(row,p){
+ const box=document.createElement('div');box.className='point-description-editor';
+ const button=document.createElement('button');button.type='button';button.className='subtle';button.textContent='Edit deskripsi titik';button.setAttribute('aria-expanded','true');
+ const label=document.createElement('label');label.hidden=false;label.textContent='Deskripsi titik koordinat';
+ const input=document.createElement('textarea');input.dataset.point='description';input.maxLength=5000;input.rows=4;input.placeholder='Isi kondisi lokasi, pekerjaan, atau catatan untuk titik ini.';input.value=p.description||'';label.append(input);
+ const note=document.createElement('small');note.textContent='Deskripsi tersimpan setelah Anda menekan Simpan perubahan.';label.append(note);
+ button.onclick=()=>{label.hidden=!label.hidden;button.setAttribute('aria-expanded',String(!label.hidden));if(!label.hidden)input.focus()};box.append(button,label);row.append(box);
 }
 function mountPointPhoto(row,p){
  row.dataset.photo=p.photo||'';
@@ -18,24 +28,22 @@ function mountPointPhoto(row,p){
 }
 async function readPointPayload(form){
  const rows=[...form.querySelectorAll('.point-row')];
- const points=rows.map(row=>{const value=k=>row.querySelector(`[data-point="${k}"]`).value.trim(),lat=Number(value('lat')),lng=Number(value('lng'));if(value('lat')===''||value('lng')===''||!Number.isFinite(lat)||!Number.isFinite(lng)||Math.abs(lat)>90||Math.abs(lng)>180)throw new Error('Lengkapi latitude dan longitude yang valid pada setiap titik.');const progress=value('progress')===''?null:Number(value('progress')),status=progress===100?'done':value('status');return {label:value('label'),region:value('region'),district:value('district'),lat,lng,progress,status,photo:row.dataset.photo||''}});
+ const points=rows.map(row=>{const value=k=>row.querySelector(`[data-point="${k}"]`).value.trim(),lat=Number(value('lat')),lng=Number(value('lng'));if(value('lat')===''||value('lng')===''||!Number.isFinite(lat)||!Number.isFinite(lng)||Math.abs(lat)>90||Math.abs(lng)>180)throw new Error('Lengkapi latitude dan longitude yang valid pada setiap titik.');const progress=value('progress')===''?null:Number(value('progress')),status=value('status');return {description:value('description'),label:value('label'),region:value('region'),district:value('district'),lat,lng,progress,status,photo:row.dataset.photo||''}});
  // Capture selections before upload and lock the editor until all photos are ready.
  const files=rows.map(row=>row.querySelector('[data-point-photo]')?.files[0]);
- const controls=[...form.querySelectorAll('[data-point-editor] input,[data-point-editor] select,[data-point-editor] button')],disabled=controls.map(c=>c.disabled);controls.forEach(c=>c.disabled=true);
+ const controls=[...form.querySelectorAll('[data-point-editor] input,[data-point-editor] select,[data-point-editor] textarea,[data-point-editor] button')],disabled=controls.map(c=>c.disabled);controls.forEach(c=>c.disabled=true);
  try{for(let i=0;i<rows.length;i++){if(!files[i])continue;const body=new FormData();body.set('photo',files[i]);const response=await fetch('/api/photos',{method:'POST',body}),data=await response.json();if(!response.ok)throw new Error(`Foto titik ${i+1}: ${data.error||'Gagal diunggah. Coba kembali.'}`);points[i].photo=data.url;rows[i].dataset.photo=data.url;rows[i].querySelector('[data-point-photo]').value='';}return {points,lat:points[0]?.lat??null,lng:points[0]?.lng??null}}
  finally{controls.forEach((c,i)=>c.disabled=disabled[i])}
 }
 
 function legacyReportCard(p){
  const meta=fields=>`<dl class="import-meta">${fields.map(([key,label])=>`<div><dt>${label}</dt><dd>${escapeHtml(importText(p[key]))}</dd></div>`).join('')}</dl>`;
- return `<details class="product-report import-card consultant-report" data-report-id="${escapeHtml(p.id)}"${openConsultantReports.has(p.id)?' open':''}><summary><span><strong>${escapeHtml(p.name)}</strong><small>${escapeHtml(importText(p.region))}</small><small>Desa: ${escapeHtml(importText(p.village))}</small></span><span class="report-expand" aria-hidden="true">⌄</span></summary><div class="report-content"><div class="product-heading"><h4>Informasi proyek</h4><div class="report-actions">${monitoringEdit(p)}<button class="subtle" data-coordinate-kind="projects" data-coordinate-id="${escapeHtml(p.id)}">Edit koordinat</button></div></div>${meta([['client','Klien'],['supervisionName','Nama supervisi'],['region','Kabupaten/Kota'],['district','Kecamatan'],['village','Nama desa'],['contractor','Pelaksana'],['end','Tanggal selesai'],['description','Deskripsi']])}<div class="product-heading"><h4>Personel konsultan</h4></div>${meta([['teamLeader','Team leader'],['consultantAdmin','Admin']])}${personnelExpertiseTable(p)}<div class="product-heading"><h4>Produk laporan</h4></div>${productTable(p)}${p.plannerReport?`<p>${escapeHtml(p.plannerReport)}</p>`:''}</div></details>`;
+ return `<details class="product-report import-card consultant-report" data-report-id="${escapeHtml(p.id)}"${openConsultantReports.has(p.id)?' open':''}><summary><span><strong>${escapeHtml(p.name)}</strong><small>${escapeHtml(importText(p.region))}</small><small>Desa: ${escapeHtml(importText(p.village))}</small></span><span class="report-expand" aria-hidden="true">⌄</span></summary><div class="report-content report-layout"><section class="report-block report-information"><div class="product-heading"><h4>Informasi proyek</h4><div class="report-actions">${monitoringEdit(p)}<button class="subtle" data-coordinate-kind="projects" data-coordinate-id="${escapeHtml(p.id)}">Edit koordinat</button></div></div>${meta([['client','Klien'],['supervisionName','Nama supervisi'],['region','Kabupaten/Kota'],['district','Kecamatan'],['village','Nama desa'],['contractor','Pelaksana'],['end','Tanggal selesai'],['description','Deskripsi']])}</section><section class="report-block report-personnel"><div class="product-heading"><h4>Personel konsultan</h4></div>${meta([['teamLeader','Team leader'],['consultantAdmin','Admin']])}${personnelExpertiseTable(p)}</section><section class="report-block report-products"><div class="product-heading"><h4>Produk laporan</h4></div>${productTable(p)}${p.plannerReport?`<p>${escapeHtml(p.plannerReport)}</p>`:''}</section></div></details>`;
 }
 
 function mountPointStatus(row,p){
- const box=document.createElement('div');box.className='point-status-editor';box.innerHTML=`<label>Progres titik<select data-point="progress"><option value="">Belum diisi</option>${[25,50,75,100].map(n=>`<option value="${n}"${p.progress===n?' selected':''}>${n}%</option>`).join('')}</select></label><label>Status progres<select data-point="status"><option value="ongoing">Sedang berjalan</option><option value="late">Terlambat</option><option value="done">Selesai</option></select></label><small>100% berarti selesai. Pada 25–75%, pilih sedang berjalan atau terlambat sesuai kondisi pelaksanaan.</small>`;row.append(box);
- const progress=box.querySelector('[data-point="progress"]'),status=box.querySelector('[data-point="status"]');status.value=p.progress===100?'done':p.status==='late'?'late':'ongoing';
- progress.onchange=()=>{if(progress.value==='100')status.value='done';else if(status.value==='done')status.value='ongoing'};
- status.onchange=()=>{if(status.value==='done')progress.value='100';else if(progress.value==='100')progress.value='75'};
+ const box=document.createElement('div');box.className='point-status-editor';box.innerHTML=`<label>Progres titik<select data-point="progress"><option value="">Belum diisi</option>${[25,50,75,100].map(n=>`<option value="${n}"${p.progress===n?' selected':''}>${n}%</option>`).join('')}</select></label><input type="hidden" data-point="status"><small>Status pelaksanaan pada peta otomatis mengikuti tanggal mulai dan selesai proyek. Persentase titik dicatat terpisah.</small>`;row.append(box);
+ box.querySelector('[data-point="status"]').value=['ongoing','late','done'].includes(p.status)?p.status:'ongoing';
 }
 
 function mountPointLocation(row,p){
@@ -48,3 +56,4 @@ function personnelExpertiseTable(p){
  const names=lines(p.experts),roles=lines(p.expertise),count=Math.max(names.length,roles.length);
  return `<div class="table-wrap personnel-pairs"><table class="personnel-pairs-table" aria-label="Personel dan tenaga ahli"><thead><tr><th scope="col">Personel</th><th scope="col">Tenaga ahli</th></tr></thead><tbody>${Array.from({length:count},(_,i)=>`<tr><td>${escapeHtml(names[i]||'Belum diisi')}</td><td>${escapeHtml(roles[i]||'Belum diisi')}</td></tr>`).join('')}</tbody></table></div>`;
 }
+

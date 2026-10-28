@@ -1,7 +1,7 @@
 import { env } from 'cloudflare:workers';
 export function database(){const db=(env as unknown as {DB:D1Database}).DB;if(!db)throw new Error('Penyimpanan belum tersedia.');return db;}
 export function bucket(){const store=(env as unknown as {BUCKET:R2Bucket}).BUCKET;if(!store)throw new Error('Penyimpanan foto belum tersedia.');return store;}
-export async function ensureSeed(){ /* Public source starts without production project data. */ }
+export async function ensureSeed(){}
 export function decode(row:any){return {...JSON.parse(row.data),revision:row.revision,updatedAt:row.updated_at};}
 const actors=new WeakMap<Request,string>();
 export function actor(request:Request){return actors.get(request)||''}

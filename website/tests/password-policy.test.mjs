@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';import vm from 'node:vm';import ts from 'typescript';import {readFileSync} from 'node:fs';import {webcrypto} from 'node:crypto';
+const password='Testing-Only!9xVqR7';let body='0'.repeat(35)+':2',status=200,call;
+const ctx={exports:{},require:()=>({readLimitedText:async r=>r.text()}),crypto:webcrypto,TextEncoder,Uint8Array,AbortSignal,fetch:async(url,options)=>{call={url,options};return new Response(body,{status})}};
+vm.runInNewContext(ts.transpileModule(readFileSync('lib/password-policy.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,ctx);
+const {passwordPolicyError,isBreachedPassword}=ctx.exports;
+assert.equal(passwordPolicyError(password,'person@example.test'),null);
+for(const p of ['Short1!','abcdefghijklmnopqrst','Abcdefghijklmnop!','Abcdefghijklmnop1','AAAAAAabcdef1234!','Person1234567890!'])assert.ok(passwordPolicyError(p,'person@example.test'));
+assert.equal(await isBreachedPassword(password),false);assert.match(call.url,/\/range\/[A-F0-9]{5}$/);assert.equal(call.options.headers['Add-Padding'],'true');assert.ok(!JSON.stringify(call).includes(password));
+const hash=Buffer.from(await webcrypto.subtle.digest('SHA-1',new TextEncoder().encode(password))).toString('hex').toUpperCase();
+body=hash.slice(5)+':123';assert.equal(await isBreachedPassword(password),true);
+body=hash.slice(5)+':0';assert.equal(await isBreachedPassword(password),false);
+body='<html>error</html>';await assert.rejects(isBreachedPassword(password));status=503;await assert.rejects(isBreachedPassword(password));
+console.log('PASS: length/complexity/repetition/email checks, breach rejection, padded zero-count ignored, prefix-only transmission, unavailable/malformed responses fail closed. Network mocked.');

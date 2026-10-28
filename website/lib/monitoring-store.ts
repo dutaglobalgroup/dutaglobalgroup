@@ -1,1 +1,1 @@
-export async function ensureMonitoring(){ /* Import production data privately after hosting is configured. */ }
+export async function ensureMonitoring(){}

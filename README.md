@@ -1,31 +1,32 @@
 # Duta Global Group — Sistem Monitoring Proyek
 
-Kode website berada di folder **website/** dan dapat diedit dengan Visual Studio Code.
+Website Cloudflare: https://dutaglobalgroup.dutaglobalgroup200.workers.dev/
 
-## Status pemindahan
+Kode terbaru berada di `website/`, dapat diedit dengan Visual Studio Code. Aplikasi menjalankan dashboard, monitoring konstruksi, supervisi, perencanaan, peta, foto, dan login email/password dengan persetujuan admin. Data disimpan di Cloudflare D1 dan foto di R2; keduanya tidak dimasukkan ke repository publik ini.
 
-- Kode sumber versi 44 disalin dari commit `859c9272bfaf05b5af9b7a9fa5746c86243b7862`.
-- Repository ini belum menjalankan website dan belum terhubung ke deployment otomatis.
-- Database produksi, foto unggahan, akun, sesi login, dan kredensial hosting tidak disalin ke repository.
-- Semua seed/data awal proyek dihapus dari salinan publik; database baru dimulai kosong. Data asli hanya boleh dipindahkan melalui jalur privat.
-- Identitas hosting lama dihapus dari manifest salinan untuk mencegah publikasi tidak sengaja ke proyek lama.
+## Pengembangan
 
-## Mengedit dengan VS Code
+1. Buka folder `website` dengan Node.js >=22.13 dan pnpm sesuai `packageManager`.
+2. Jalankan `pnpm install --frozen-lockfile`.
+3. Isi konfigurasi lokal dalam `.dev.vars` sesuai `.dev.vars.example`. Jangan commit kredensial.
+4. Jalankan `pnpm dev`.
+5. Edit `ui/dashboard.html` untuk struktur dashboard, `public/*.css` untuk tampilan, `public/*.js` untuk interaksi, dan `app/api` untuk API. Build menyinkronkan HTML ke aplikasi secara otomatis.
 
-1. Clone repository ini dan buka folder `website`.
-2. Gunakan Node.js >=22.13.0 dan pnpm sesuai `packageManager` dalam `package.json`.
-3. Jalankan `pnpm install --frozen-lockfile`.
-4. Salin `.dev.vars.example` menjadi `.dev.vars` dan isi konfigurasi autentikasi milik perusahaan; jangan commit berkas tersebut.
-5. Jalankan `pnpm dev` untuk pengembangan lokal. Lihat `PANDUAN-VSCODE.md` untuk struktur fitur.
+## Build dan deployment Cloudflare
 
-## Hosting produksi
+- Root directory: `website`
+- Build command: `pnpm install --frozen-lockfile && pnpm build`
+- Deploy command: `pnpm deploy`
+- Branch produksi: `main`
+- Worker: `dutaglobalgroup`
+- D1 binding `DB`: `dutaglobalgroup-db`
+- R2 binding `BUCKET`: `dutaglobalgroup-photos`
+- Secrets Worker: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`.
 
-Aplikasi menggunakan Cloudflare Workers, D1, R2, dan Supabase Auth. GitHub Pages saja tidak menjalankan API, database, penyimpanan foto, atau sesi login aplikasi ini.
+Build produksi telah diuji. Koneksi Cloudflare Builds ke GitHub masih memerlukan otorisasi aplikasi GitHub oleh pemilik akun. Selama koneksi tersebut belum diselesaikan, commit GitHub tidak otomatis diterbitkan. Deployment manual dapat dilakukan oleh pemilik akun dengan `pnpm deploy` setelah login Wrangler.
 
-Untuk memindahkan sistem lengkap, diperlukan akun hosting perusahaan, binding database dan penyimpanan baru, pemindahan data dan foto produksi, konfigurasi autentikasi dan callback, serta validasi sebelum mengganti alamat publik. Jangan mengaktifkan deployment menggunakan database placeholder pada konfigurasi pengembangan.
-
-Nama repository saat ini `dutaglobalgroup` juga merupakan repository profil GitHub. Alamat user Pages persis `dutaglobalgroup.github.io` membutuhkan repository `dutaglobalgroup.github.io`; repository ini dapat tetap menjadi sumber aplikasi server.
+Perubahan data melalui website tersimpan langsung di D1/R2. Perubahan kode dilakukan melalui repository lalu deployment. Jangan menjalankan migrasi database lama secara membabi buta terhadap produksi. Data contoh/seed dinonaktifkan agar data yang sudah dihapus tidak muncul kembali.
 
 ## Keamanan
 
-Lihat `website/SECURITY_REVIEW.md` untuk cakupan pemeriksaan dan keterbatasannya. Jangan unggah password, token, `.env`, `.dev.vars`, ekspor akun, atau data sesi ke repository publik.
+HTTPS dan header keamanan aktif. API perubahan memerlukan akun yang disetujui admin, sesi yang valid, pemeriksaan origin dan batas permintaan. Pengujian login dan sesi menggunakan provider tiruan; keberhasilan login akun pengguna perlu diverifikasi pengguna sendiri. Jangan unggah kata sandi, token, ekspor akun, sesi, atau data produksi ke repository.

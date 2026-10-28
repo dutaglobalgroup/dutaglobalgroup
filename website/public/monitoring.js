@@ -22,9 +22,10 @@ function setSummaryExpanded(expanded){
 }
 document.querySelectorAll('.summary-toggle').forEach(el=>el.addEventListener('click',()=>setSummaryExpanded(el.getAttribute('aria-expanded')!=='true')));
 function renderStatusChart(counts){
- const labels=['Berjalan','Terlambat','Selesai'],values=labels.map(l=>counts[l]),step=Math.max(1,Math.ceil(Math.max(1,...values)/4)),max=step*4,y=v=>175-v/max*130;
- $('status-chart').innerHTML=`<svg viewBox="0 0 330 225" role="img" aria-label="${labels.map((l,i)=>l+': '+values[i]+' paket').join(', ')}"><text x="42" y="17">JUMLAH PAKET</text>${Array.from({length:5},(_,i)=>`<line x1="42" x2="302" y1="${y(i*step)}" y2="${y(i*step)}" stroke="#e1e9e5"/><text x="33" y="${y(i*step)+4}" text-anchor="end">${i*step}</text>`).join('')}${labels.map((l,i)=>`<rect x="${57+i*85}" y="${y(values[i])}" width="45" height="${values[i]/max*130}" rx="3" fill="${colors[l]}"><title>${l}: ${values[i]} paket</title></rect><text x="${79+i*85}" y="${y(values[i])-8}" text-anchor="middle" class="chart-count">${values[i]}</text><text x="${79+i*85}" y="200" text-anchor="middle">${l}</text>`).join('')}</svg>`;
+ const entries=Object.entries(counts),max=Math.max(1,...entries.map(([,n])=>Number(n)||0));
+ $('status-chart').innerHTML='<div class="construction-columns dashboard-column-chart" role="list" aria-label="Jumlah paket per status">'+entries.map(([label,value])=>{const n=Number(value)||0;return `<div class="dashboard-chart-column" role="listitem"><div class="dashboard-column-plot"><div class="dashboard-column-fill" style="height:${n/max*100}%;background:${colors[label]||'#a6b5bf'}"><strong>${n}</strong></div></div><span>${escapeHtml(label)}</span></div>`}).join('')+'</div><p class="chart-caption">Jumlah paket · sesuai filter proyek</p>';
 }
+
 const monitoringViews=['construction','consultants','planners'];
 function selectMonitoring(view,updateHash=false){
  if(!monitoringViews.includes(view))view='construction';
@@ -67,4 +68,4 @@ function renderMonitoring(){
  $('planner-reports').innerHTML=renderReports('plannerReport');
 }
 document.addEventListener('click',e=>{const edit=e.target.closest('[data-monitor-edit]');if(edit)openEditor(edit.dataset.monitorEdit);const detailButton=e.target.closest('[data-monitor-detail]');if(detailButton)detail(detailButton.dataset.monitorDetail)});
-let monitoringDay=jakartaDate();setInterval(()=>{const today=jakartaDate();if(today!==monitoringDay){monitoringDay=today;render()}},60000);
+let monitoringDay=jakartaDate();setInterval(()=>{const today=jakartaDate();if(today!==monitoringDay){monitoringDay=today;mapSnapshot="";render();if(typeof updateGeneral==="function")updateGeneral()}},60000);

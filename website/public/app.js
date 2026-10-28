@@ -2,11 +2,13 @@ let activeMonitoring='construction';
 'use strict';
 // Data dari template_proyek_aceh.csv. Nilai dalam rupiah; plan null berarti belum tersedia.
 let projects = [];
+const nameOrder=(a,b)=>String(a?.supervision?.name||a?.name||'').localeCompare(String(b?.supervision?.name||b?.name||''),'id',{sensitivity:'base',numeric:true})||String(a.id||'').localeCompare(String(b.id||''));
+function sortProjectLists(){projects.sort(nameOrder);if(typeof progressRecords!=='undefined')progressRecords.sort(nameOrder);if(typeof importedRecords!=='undefined')importedRecords.sort(nameOrder)}
 const regions=['Aceh Barat','Aceh Barat Daya','Aceh Besar','Aceh Jaya','Aceh Selatan','Aceh Singkil','Aceh Tamiang','Aceh Tengah','Aceh Tenggara','Aceh Timur','Aceh Utara','Bener Meriah','Bireuen','Gayo Lues','Nagan Raya','Pidie','Pidie Jaya','Simeulue','Banda Aceh','Langsa','Lhokseumawe','Sabang','Subulussalam'];
 const $=id=>document.getElementById(id), fmt=n=>new Intl.NumberFormat('id-ID',{maximumFractionDigits:1}).format(n), status=p=>p.status;
 const money=n=>'Rp '+new Intl.NumberFormat('id-ID',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n);
 const deviation=p=>p.plan===null?'Belum tersedia':`${p.actual>p.plan?'+':''}${fmt(p.actual-p.plan)} pp`;
-const colors={Berjalan:'#2b8064',Terlambat:'#dc8a44',Selesai:'#5483b5'};
+const colors={Berjalan:'#21b8c5',Terlambat:'#d68b48',Selesai:'#71d8b6','Belum mulai':'#245578','Tanggal belum lengkap':'#a6b5bf'};
 const escapeHtml=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 $('region').innerHTML+=regions.map(r=>`<option>${r}</option>`).join('');
 

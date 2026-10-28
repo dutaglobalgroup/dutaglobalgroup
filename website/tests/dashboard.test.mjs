@@ -18,16 +18,21 @@ assert.equal((html.match(/id="auth-title"/g)||[]).length,1);
 assert.ok(!/<script[^>]*>\s*[^<\s]/.test(html));
 console.log('PASS: date boundaries, invalid dates, grouped locations, missing coordinates, auth markup');
 vm.runInContext(readFileSync('public/execution-status.js','utf8'),c);
-assert.equal(c.executionStatus({actual:100,plan:100,end:'2026-01-01'},'2026-10-12').key,'done');
-assert.equal(c.executionStatus({actual:60,plan:70},'2026-10-12').key,'late');
-assert.equal(c.executionStatus({actual:70,plan:60,end:'2026-10-11'},'2026-10-12').key,'late');
-assert.equal(c.executionStatus({actual:70,plan:60,end:'2026-10-12'},'2026-10-12').key,'ongoing');
-assert.equal(c.executionStatus({actual:null,plan:60},'2026-10-12').key,'unknown');
-console.log('PASS: completion, negative deviation, overdue, ongoing, missing progress');
-assert.equal(c.executionStatus({actual:100,manualStatus:'late'}).key,'late');
-assert.equal(c.executionStatus({actual:0,manualStatus:'done'}).key,'done');
-assert.equal(c.executionStatus({actual:100,manualStatus:'auto'}).key,'done');
-console.log('PASS: manual status overrides and automatic reset');
+const dates={start:'2026-10-01',end:'2026-10-12'};
+assert.equal(c.executionStatus(dates,'2026-09-30').key,'upcoming');
+assert.equal(c.executionStatus(dates,'2026-10-01').key,'ongoing');
+assert.equal(c.executionStatus(dates,'2026-10-11').key,'ongoing');
+assert.equal(c.executionStatus(dates,'2026-10-12').key,'done');
+assert.equal(c.executionStatus(dates,'2026-10-13').key,'done');
+assert.equal(c.executionStatus({start:'2026-02-30',end:'2026-03-30'},'2026-03-05').key,'unknown');
+assert.equal(c.executionStatus({start:'2026-10-12',end:'2026-10-01'},'2026-10-05').key,'unknown');
+assert.equal(c.executionStatus({end:'2026-10-12'},'2026-10-12').key,'unknown');
+for(const actual of [0,25,100,null])for(const manualStatus of ['late','done','ongoing','auto']){
+ assert.equal(c.executionStatus({...dates,actual,plan:100,manualStatus,updatedAt:'2099-01-01'},'2026-10-05').key,'ongoing');
+ assert.equal(c.executionStatus({...dates,actual,manualStatus},'2026-10-12').key,'done');
+}
+assert.equal(c.jakartaDate(new Date('2026-10-11T17:00:00Z')),'2026-10-12');
+console.log('PASS: calendar boundaries, invalid and missing dates, WIB rollover, status independent from progress/manual status/update time');
 
 const multi=c.groupProjectLocations([{id:'multi',kind:'monitoring',label:'Supervisi',points:[{label:'A',lat:1,lng:2},{label:'B',lat:3,lng:4}]},{id:'build',kind:'progress',label:'Konstruksi',lat:1,lng:2}]);assert.equal(multi.length,2);assert.equal(multi[0].items.length,2);assert.equal(multi[1].lng,4);assert.equal(multi[0].label,'Supervisi & Konstruksi');assert.equal(c.groupProjectLocations([{id:'gone',points:[],lat:1,lng:2}])[0].located,false);
 console.log('PASS: multiple coordinates, category preservation, grouping and cleared locations');
