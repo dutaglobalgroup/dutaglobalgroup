@@ -17,6 +17,14 @@ const managedLinux = readExecutionProfile() === "managed-linux";
 const localBindingConfig = {
   name: "dutaglobalgroup",
   main: "./build/sites-worker.ts",
+  compatibility_date: "2026-05-15",
+  workers_dev: true,
+  preview_urls: false,
+  observability: {
+    enabled: true,
+    head_sampling_rate: 0.1,
+    logs: { enabled: true, invocation_logs: false },
+  },
   compatibility_flags: ["nodejs_compat"],
   d1_databases: d1
     ? [
