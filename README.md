@@ -16,14 +16,14 @@ Kode terbaru berada di `website/`, dapat diedit dengan Visual Studio Code. Aplik
 
 - Root directory: `website`
 - Build command: `pnpm install --frozen-lockfile && pnpm build`
-- Deploy command: `pnpm deploy`
+- Deploy command: `pnpm run deploy`
 - Branch produksi: `main`
 - Worker: `dutaglobalgroup`
 - D1 binding `DB`: `dutaglobalgroup-db`
 - R2 binding `BUCKET`: `dutaglobalgroup-photos`
 - Secrets Worker: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`.
 
-Build produksi telah diuji. Koneksi Cloudflare Builds ke GitHub masih memerlukan otorisasi aplikasi GitHub oleh pemilik akun. Selama koneksi tersebut belum diselesaikan, commit GitHub tidak otomatis diterbitkan. Deployment manual dapat dilakukan oleh pemilik akun dengan `pnpm deploy` setelah login Wrangler.
+Koneksi GitHub–Cloudflare telah diotorisasi dan build produksi berhasil pada 28 Oktober 2026. Commit pada cabang `main` memicu build dan deployment Worker `dutaglobalgroup` secara otomatis. Alamat publik tetap https://dutaglobalgroup.pages.dev/. Periksa status build di Cloudflare sebelum menganggap perubahan telah terbit. Deployment manual juga dapat dilakukan oleh pemilik akun dengan `pnpm run deploy` setelah login Wrangler.
 
 Perubahan data melalui website tersimpan langsung di D1/R2. Perubahan kode dilakukan melalui repository lalu deployment. Jangan menjalankan migrasi database lama secara membabi buta terhadap produksi. Data contoh/seed dinonaktifkan agar data yang sudah dihapus tidak muncul kembali.
 
